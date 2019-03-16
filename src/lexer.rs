@@ -30,6 +30,9 @@ impl Lexer {
                     let i = Lexer::get_number(c, &mut it).unwrap();
                     tokens.push(Token::TokenNum(i));
                 }
+                ' ' | '\n' | '\t' => {
+                    it.next();
+                }
                 _ => {
                     return Err(format!("Lexical Error: Unexpected symbol '{}'", c));
                 }
@@ -55,10 +58,6 @@ impl Lexer {
         }
 
         return num.parse::<u64>();
-    }
-
-    fn is_whitespace(c: char) -> bool {
-        return c == ' ' || c == '\n';
     }
 
     fn is_digit(c: char) -> bool {
