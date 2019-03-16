@@ -1,11 +1,17 @@
 use crate::lexer::Lexer;
-use crate::tokens::*;
+use crate::token::*;
 
 #[derive(Debug)]
-pub struct ExpressionNode {
+pub struct ExprNode {
     token: Token,
-    pub left: Option<Box<ExpressionNode>>,
-    pub right: Option<Box<ExpressionNode>>,
+    pub left: Option<Box<ExprNode>>,
+    pub right: Option<Box<ExprNode>>,
+}
+
+impl ExprNode {
+    pub fn token(&self) -> Token {
+        return self.token;
+    }
 }
 
 pub struct Parser {
@@ -14,7 +20,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn parse(input: String) -> Result<ExpressionNode, String> {
+    pub fn parse(input: String) -> Result<ExprNode, String> {
         let lex_result = Lexer::tokenize(&input);
         match lex_result {
             Ok(tokens) => {
@@ -25,21 +31,21 @@ impl Parser {
         };
     }
 
-    fn parse_expr(&mut self) -> Result<ExpressionNode, String> {
+    fn parse_expr(&mut self) -> Result<ExprNode, String> {
         let expression = self.parse_op().or(self.parse_num())?;
         return Ok(expression);
     }
 
-    fn parse_op(&mut self) -> Result<ExpressionNode, String> {
+    fn parse_op(&mut self) -> Result<ExprNode, String> {
         let node = self.parse_num().and_then(|x| {
             self.accept(Token::TokenAdd)
-                .or(self.accept(Token::TokenDiv))
-                .or(self.accept(Token::TokenMul))
                 .or(self.accept(Token::TokenSub))
+                .or(self.accept(Token::TokenMul))
+                .or(self.accept(Token::TokenDiv))
                 .map_err(|t| format!("Unexpected token {:?} when parsing operation", t))
                 .and_then(|y| {
                     return self.parse_expr().and_then(|z| {
-                        return Ok(ExpressionNode {
+                        return Ok(ExprNode {
                             token: y,
                             left: Some(Box::new(x)),
                             right: Some(Box::new(z)),
@@ -51,10 +57,10 @@ impl Parser {
         return node;
     }
 
-    fn parse_num(&mut self) -> Result<ExpressionNode, String> {
+    fn parse_num(&mut self) -> Result<ExprNode, String> {
         match self.accept(Token::TokenNum(0)) {
             Ok(num) => {
-                return Ok(ExpressionNode {
+                return Ok(ExprNode {
                     token: num,
                     left: None,
                     right: None,
