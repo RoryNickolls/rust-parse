@@ -1,10 +1,17 @@
 pub mod lexer;
-use lexer::Lexer;
+use crate::lexer::Lexer;
+
+pub mod parser;
+use crate::parser::Parser;
+
+pub mod tokens;
 
 extern crate regex;
 
 fn main() {
-    let lexer = Lexer::new();
-    let tokens = lexer.tokenize(String::from("330+300"));
-    println!("{:?}", tokens);
+    let parse_result = Parser::parse(String::from("2342+2343*226/32"));
+    match parse_result {
+        Ok(node) => println!("{:?}", node),
+        Err(msg) => println!("{}", msg),
+    }
 }

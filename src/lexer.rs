@@ -1,51 +1,76 @@
-use crate::regex::Regex;
+use crate::tokens::*;
 
-#[derive(Copy, Clone, Debug)]
-pub enum Token {
-    TokenAdd,
-    TokenSub,
-    TokenMul,
-    TokenDiv,
-    TokenNumber,
-}
+use std::iter::Peekable;
 
-pub struct Lexer {
-    token_expressions: Vec<(Regex, Token)>,
-}
+pub struct Lexer {}
 
 impl Lexer {
-    pub fn new() -> Lexer {
-        let mut token_expressions = Vec::new();
-        token_expressions.push((Regex::new(r"^\+$").unwrap(), Token::TokenAdd));
-        token_expressions.push((Regex::new(r"^\-$").unwrap(), Token::TokenSub));
-        token_expressions.push((Regex::new(r"^\*$").unwrap(), Token::TokenMul));
-        token_expressions.push((Regex::new(r"^/$").unwrap(), Token::TokenDiv));
-        token_expressions.push((Regex::new(r"^\d+$").unwrap(), Token::TokenNumber));
-        Lexer { token_expressions }
-    }
-
-    pub fn tokenize(&self, contents: String) -> Vec<Token> {
-        let mut tokens = Vec::new();
-
-        let mut remaining_contents = contents;
-        while let Some(token) = self.next_token(&mut remaining_contents) {
-            tokens.push(token);
-            println!("{:?}, {}", token, remaining_contents);
-        }
-        tokens
-    }
-
-    fn next_token(&self, contents: &mut String) -> Option<Token> {
-        let mut range = contents.len();
-        while range > 0 {
-            for (regex, tok) in self.token_expressions.iter() {
-                if regex.is_match(&contents[0..range]) {
-                    *contents = contents[range..].to_string();
-                    return Some(*tok);
+    pub fn tokenize(input: &String) -> Result<Vec<Token>, String> {
+        let mut tokens: Vec<Token> = Vec::new();
+        let mut it = input.chars().peekable();
+        while let Some(&c) = it.peek() {
+            match c {
+                '+' => {
+                    it.next();
+                    tokens.push(Token::TokenAdd);
                 }
-            }
-            range = range - 1;
+                '-' => {
+                    it.next();
+                    tokens.push(Token::TokenSub);
+                }
+                '*' => {
+                    it.next();
+                    tokens.push(Token::TokenMul);
+                }
+                '/' => {
+                    it.next();
+                    tokens.push(Token::TokenDiv);
+                }
+                '0'...'9' => {
+                    let i = Lexer::get_number(c, &mut it).unwrap();
+                    tokens.push(Token::TokenNum(i));
+                }
+                _ => {
+                    return Err(format!("Lexical Error: Unexpected symbol '{}'", c));
+                }
+            };
         }
-        return None;
+        Ok(tokens)
+    }
+
+    fn get_number(
+        c: char,
+        it: &mut Peekable<std::str::Chars>,
+    ) -> Result<u64, std::num::ParseIntError> {
+        let mut num = c.to_string();
+        it.next();
+
+        while let Some(&n) = it.peek() {
+            if Lexer::is_digit(n) {
+                num.push(n);
+                it.next();
+            } else {
+                return num.parse::<u64>();
+            }
+        }
+
+        return num.parse::<u64>();
+    }
+
+    fn is_whitespace(c: char) -> bool {
+        return c == ' ' || c == '\n';
+    }
+
+    fn is_digit(c: char) -> bool {
+        return c == '0'
+            || c == '1'
+            || c == '2'
+            || c == '3'
+            || c == '4'
+            || c == '5'
+            || c == '6'
+            || c == '7'
+            || c == '8'
+            || c == '9';
     }
 }
